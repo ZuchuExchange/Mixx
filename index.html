@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mixx - Business Loans</title>
+    <style>
+        :root {
+            --primary-blue: #00337C;
+            --accent-yellow: #FFD700;
+            --text-white: #ffffff;
+            --bg-gray: #f4f7f9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-gray);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 375px;
+            height: 667px; /* Standard mobile aspect ratio */
+            background-color: var(--primary-blue);
+            position: relative;
+            overflow: hidden;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            padding: 40px 30px;
+        }
+
+        /* Abstract professional background element */
+        .container::before {
+            content: '';
+            position: absolute;
+            top: -100px;
+            right: -100px;
+            width: 300px;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            z-index: 0;
+        }
+
+        .header {
+            z-index: 1;
+        }
+
+        .hello-tag {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .main-title {
+            color: var(--text-white);
+            font-size: 42px;
+            font-weight: 800;
+            line-height: 1.1;
+        }
+
+        .highlight {
+            color: var(--accent-yellow);
+        }
+
+        .loan-card {
+            margin-top: auto;
+            margin-bottom: auto;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 20px;
+            z-index: 1;
+        }
+
+        .loan-text {
+            color: var(--accent-yellow);
+            font-size: 22px;
+            font-weight: 700;
+            line-height: 1.4;
+            text-align: center;
+        }
+
+        .sub-text {
+            color: var(--text-white);
+            display: block;
+            font-size: 16px;
+            margin-top: 10px;
+            font-weight: 400;
+            opacity: 0.9;
+        }
+
+        .footer {
+            margin-top: auto;
+            z-index: 1;
+        }
+
+        .continue-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--accent-yellow);
+            color: var(--primary-blue);
+            width: 100%;
+            padding: 18px;
+            border-radius: 16px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 18px;
+            transition: all 0.3s ease;
+        }
+
+        .continue-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .arrow {
+            margin-left: 12px;
+            font-size: 22px;
+            transition: transform 0.3s ease;
+        }
+
+        .continue-btn:hover .arrow {
+            transform: translateX(5px);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <p class="hello-tag">Welcome to Mixx</p>
+            <h1 class="main-title">Ready to<br><span class="highlight">Grow?</span></h1>
+        </div>
+
+        <div class="loan-card">
+            <p class="loan-text">
+                Unahitaji Mkopo Kukuza Biashara Yako? 
+                <span class="sub-text">Get Sorted Now!!</span>
+            </p>
+        </div>
+
+        <div class="footer">
+            <a href="index2.html" class="continue-btn">
+                Continue <span class="arrow">→</span>
+            </a>
+        </div>
+    </div>
+
+</body>
+  </html>
