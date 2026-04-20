@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mixx Super App</title>
+    <style>
+        :root {
+            --mixx-blue: #00337C;
+            --mixx-yellow: #FFD700;
+            --mixx-light-blue: #4A90E2;
+            --error-red: #FF3B30;
+            --input-border: #D1D1D6;
+            --btn-disabled: #E5E5EA;
+            --text-gray: #8E8E93;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f2f2f7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .phone-container {
+            width: 375px;
+            height: 750px;
+            background-color: var(--mixx-blue);
+            position: relative;
+            overflow: hidden;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        /* Top Header */
+        .header {
+            padding: 20px;
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .lang-pill {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 6px 12px;
+            border-radius: 20px;
+            color: white;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* The "Blob" Image Container */
+        .blob-section {
+            position: relative;
+            height: 320px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .blob-shape {
+            width: 280px;
+            height: 280px;
+            background: #1a4a8d;
+            border: 3px solid var(--mixx-yellow);
+            clip-path:  polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
+            border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .blob-shape::after {
+            content: '👤';
+            position: absolute;
+            font-size: 200px;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            filter: grayscale(1) opacity(0.3);
+        }
+
+        .text-section {
+            padding: 0 30px;
+            margin-top: 10px;
+        }
+
+        .text-main {
+            color: var(--mixx-light-blue);
+            font-size: 32px;
+            font-weight: 700;
+            line-height: 1.1;
+            font-style: italic;
+        }
+
+        .text-sub {
+            color: var(--mixx-yellow);
+            font-size: 34px;
+            font-weight: 800;
+            margin-top: 5px;
+        }
+
+        .dots {
+            display: flex;
+            gap: 8px;
+            padding: 20px 30px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+        }
+
+        .dot.active {
+            background: var(--mixx-yellow);
+            width: 20px;
+            border-radius: 10px;
+        }
+
+        .bottom-sheet {
+            background: white;
+            margin-top: auto;
+            border-radius: 25px 25px 0 0;
+            padding: 40px 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            border: 1.5px solid var(--input-border);
+            border-radius: 12px;
+            padding: 14px;
+            transition: all 0.2s;
+        }
+
+        .input-wrapper.active-focus { border-color: var(--mixx-blue); }
+        .input-wrapper.error { border-color: var(--error-red); }
+
+        .flag-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-right: 12px;
+            border-right: 1px solid var(--input-border);
+            margin-right: 12px;
+        }
+
+        /* Updated Tanzanian Flag CSS */
+        .tz-flag {
+            width: 24px;
+            height: 16px;
+            position: relative;
+            background: linear-gradient(
+                135deg, 
+                #1EB53A 0%, #1EB53A 35%, 
+                #FCD116 35%, #FCD116 40%, 
+                #000000 40%, #000000 60%, 
+                #FCD116 60%, #FCD116 65%, 
+                #00A3E0 65%, #00A3E0 100%
+            );
+            border-radius: 2px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        #phoneInput {
+            border: none;
+            outline: none;
+            font-size: 17px;
+            width: 100%;
+            color: #1c1c1e;
+        }
+
+        #errorMsg {
+            color: var(--error-red);
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: -10px;
+            display: none;
+        }
+
+        .next-btn {
+            background: var(--btn-disabled);
+            color: var(--text-gray);
+            border: none;
+            padding: 18px;
+            border-radius: 40px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: not-allowed;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: 0.3s;
+        }
+
+        .next-btn.ready {
+            background: var(--mixx-blue);
+            color: white;
+            cursor: pointer;
+        }
+
+        .spinner {
+            width: 22px;
+            height: 22px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .congrats-modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 85%;
+            background: var(--mixx-blue);
+            color: white;
+            padding: 30px 20px;
+            border-radius: 20px;
+            text-align: center;
+            border: 2px solid var(--mixx-yellow);
+            display: none;
+            z-index: 100;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.6);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="phone-container">
+        <div class="header">
+            <div class="lang-pill">🇬🇧 English ▾</div>
+        </div>
+
+        <div class="blob-section">
+            <div class="blob-shape"></div>
+        </div>
+
+        <div class="text-section">
+            <div class="text-main">Many Apps for days..</div>
+            <div class="text-sub">on your Super App</div>
+        </div>
+
+        <div class="dots">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot active"></div>
+        </div>
+
+        <div class="bottom-sheet">
+            <div class="input-wrapper" id="wrapper">
+                <div class="flag-box">
+                    <div class="tz-flag"></div>
+                    <span style="color: #8E8E93; font-weight: 600;">+255</span>
+                </div>
+                <input type="tel" id="phoneInput" placeholder="Enter Number Here!!" maxlength="9">
+            </div>
+            <div id="errorMsg">Sio Sahihi</div>
+
+            <button class="next-btn" id="nextBtn" disabled>
+                <span id="btnText">Next</span>
+                <div class="spinner" id="loader"></div>
+            </button>
+        </div>
+
+        <div class="congrats-modal" id="modal">
+            <h2 style="color: var(--mixx-yellow); margin-bottom: 15px;">Hongera!</h2>
+            <p style="line-height: 1.5; font-size: 15px;">Umechaguliwa Kupokea Mkopo Wa 300,000(Laki Tatu). Ingia Kisha Thibitisha Kwenye Akaunti Yako</p>
+        </div>
+    </div>
+
+    <script>
+        const input = document.getElementById('phoneInput');
+        const wrapper = document.getElementById('wrapper');
+        const error = document.getElementById('errorMsg');
+        const nextBtn = document.getElementById('nextBtn');
+        const btnText = document.getElementById('btnText');
+        const loader = document.getElementById('loader');
+        const modal = document.getElementById('modal');
+
+        input.addEventListener('focus', () => {
+            input.placeholder = "7xx xxx xxx";
+            wrapper.classList.add('active-focus');
+        });
+
+        input.addEventListener('input', (e) => {
+            let val = e.target.value.replace(/\D/g, ''); 
+            e.target.value = val;
+
+            const isValid = /^7\d{8}$/.test(val);
+
+            if (val.length > 0) {
+                if (!isValid) {
+                    wrapper.classList.add('error');
+                    error.style.display = 'block';
+                    nextBtn.disabled = true;
+                    nextBtn.classList.remove('ready');
+                } else {
+                    wrapper.classList.remove('error');
+                    error.style.display = 'none';
+                    nextBtn.disabled = false;
+                    nextBtn.classList.add('ready');
+                }
+            } else {
+                error.style.display = 'none';
+                wrapper.classList.remove('error');
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            const fullNumber = "+255" + input.value;
+            localStorage.setItem("My number", fullNumber);
+
+            btnText.style.display = 'none';
+            loader.style.display = 'block';
+            nextBtn.style.pointerEvents = 'none';
+
+            setTimeout(() => {
+                loader.style.display = 'none';
+                modal.style.display = 'block';
+
+                setTimeout(() => {
+                    window.location.href = 'index3.html';
+                }, 3000);
+            }, 3000);
+        });
+    </script>
+</body>
+  </html>
