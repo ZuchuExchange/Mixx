@@ -107,10 +107,9 @@ footer{
 
 <header class="topbar">
   <div class="logo">Safaricom</div>
-  <nav>
+  <nav></nav>
 </header>
 
-<!-- USER CARD -->
 <div class="user-card">
   <div class="profile-icon">👤</div>
   <div class="user-details">
@@ -161,6 +160,7 @@ if(id){
 
 let selectedAmount=null
 let selectedFee=null
+
 document.querySelectorAll(".service-card").forEach(card=>{
   card.addEventListener("click",function(){
     document.querySelectorAll(".service-card").forEach(c=>c.classList.remove("selected"))
@@ -170,11 +170,13 @@ document.querySelectorAll(".service-card").forEach(card=>{
     document.getElementById("continueBox").style.display="block"
   })
 })
+
 function continuePayment(){
-  localStorage.setItem("selectedAmount", selectedAmount)
-  localStorage.setItem("activationFee", selectedFee)
+  // Specific Key assignment updates applied here mapping clean context values
+  localStorage.setItem("amount", selectedAmount)
+  localStorage.setItem("fee", selectedFee)
   window.location.href="payment1.html"
 }
 </script>
 </body>
-</html>
+                                                                                              </html>
