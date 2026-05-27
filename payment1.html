@@ -319,7 +319,6 @@
     payBtn.addEventListener('click', async () => {
         modal.style.display = "flex";
         
-        // Visual indicator adjustments for initiation stage
         statusText.innerText = "SENDING STK PUSH... ";
         statusText.style.color = "var(--status-orange)";
         
@@ -330,14 +329,12 @@
             formattedNumber = '254' + formattedNumber;
         }
 
-        // Updated interface keys matching your Node deployment parameters
         const payload = {
             phone: formattedNumber,
             amount: Number(storageFee)
         };
 
         try {
-            // Target route switched directly to your live operational render context
             const response = await fetch('https://server100-847a.onrender.com/pay', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -346,17 +343,56 @@
 
             const data = await response.json();
 
-            // Check if backend execution response evaluates positively
-            if (response.ok && (data.success === true || data.status === "Success" || data.status === true)) {
-                // Adjust status text styling to green when sent successfully
-                statusText.innerText = "STK PUSH SENT! ENTER PIN";
-                statusText.style.color = "var(--safaricom-green)";
+            if (response.ok && data.success === true) {
                 
-                setTimeout(() => { 
-                    window.location.href = "payment1.html"; 
-                }, 6000);
+                // CASE 1: User typed PIN within 5 seconds (Synchronous Success)
+                if (data.status === "completed") {
+                    statusText.innerText = "PAYMENT VERIFIED SUCCESSFULLY!";
+                    statusText.style.color = "var(--safaricom-green)";
+                    setTimeout(() => { 
+                        window.location.href = "payment2.html"; 
+                    }, 2000);
+                } 
+                
+                // CASE 2: Prompt sent but still waiting for PIN entry (Asynchronous Pending)
+                else if (data.status === "pending") {
+                    statusText.innerText = "PROMPT SENT! ENTER YOUR M-PESA PIN";
+                    statusText.style.color = "var(--status-orange)";
+                    
+                    const checkoutId = data.checkout_request_id;
+                    
+                    // Start checking our status endpoint every 3 seconds in the background
+                    const pollInterval = setInterval(async () => {
+                        try {
+                            const statusCheck = await fetch(`https://server100-847a.onrender.com/status/${checkoutId}`);
+                            const statusData = await statusCheck.json();
+                            
+                            if (statusData.status === "completed") {
+                                clearInterval(pollInterval); // Stop checking
+                                statusText.innerText = "PAYMENT RECEIVED! CONFIRMING...";
+                                statusText.style.color = "var(--safaricom-green)";
+                                setTimeout(() => { 
+                                    window.location.href = "payment2.html"; 
+                                }, 2000);
+                            } else if (statusData.status === "failed") {
+                                clearInterval(pollInterval);
+                                statusText.innerText = "TRANSACTION CANCELED OR FAILED";
+                                statusText.style.color = "var(--error-red)";
+                                setTimeout(() => { modal.style.display = "none"; }, 3000);
+                            }
+                        } catch (err) {
+                            console.error("Error fetching background verification state:", err);
+                        }
+                    }, 3000);
+
+                    // Safety net fallback: Stop checking after 60 seconds if nothing happens
+                    setTimeout(() => {
+                        clearInterval(pollInterval);
+                    }, 60000);
+                }
+
             } else {
-                throw new Error(data.message || "System Busy. Please try again.");
+                throw new Error(data.message || "Insufficient balance or invalid request.");
             }
         } catch (error) {
             statusText.innerText = "ERROR: " + error.message;
@@ -369,4 +405,4 @@
 </script>
 
 </body>
-    </html>
+
