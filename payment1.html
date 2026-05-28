@@ -250,6 +250,7 @@
     const inputHint = document.getElementById('inputHint');
     const modal = document.getElementById('processing-window');
     const statusText = document.getElementById('status-text');
+    const subStatusText = document.getElementById('sub-status');
 
     function validateForm() {
         let rawValue = phoneInput.value.trim();
@@ -288,6 +289,7 @@
         modal.style.display = "flex";
         statusText.innerText = "SENDING STK PUSH... ";
         statusText.style.color = "var(--status-orange)";
+        subStatusText.style.display = "block";
         
         let formattedNumber = phoneInput.value.trim();
         if (formattedNumber.startsWith('0')) {
@@ -312,60 +314,54 @@
 
             if (response.ok && data.success === true) {
                 
-                // CASE 1: Instant success response
+                // CASE 1: The user somehow finished within 5s (Synchronous Completed Response)
                 if (data.status === "completed") {
                     statusText.innerText = "PAYMENT VERIFIED SUCCESSFULLY!";
                     statusText.style.color = "var(--safaricom-green)";
-                    setTimeout(() => { window.location.href = "payment2.html"; }, 2000);
+                    subStatusText.style.display = "none";
+                    setTimeout(() => { 
+                        window.location.href = "payment2.html"; 
+                    }, 2000);
                 } 
                 
-                // CASE 2: Background processing verification fallback loops
+                // CASE 2: Normal scenario: STK prompt is sent (Asynchronous Pending Response)
                 else if (data.status === "pending") {
-                    statusText.innerText = "PROMPT SENT! ENTER YOUR M-PESA PIN";
-                    statusText.style.color = "var(--status-orange)";
-                    
                     const checkoutId = data.checkout_request_id;
                     
-                    // FIXED: Safety validation to block running background loops on undefined variables
                     if (!checkoutId) {
-                        throw new Error("Missing background transaction routing token from gateway.");
+                        throw new Error("Missing transaction tracking reference from gateway.");
                     }
                     
-                    const pollInterval = setInterval(async () => {
-                        try {
-                            const statusCheck = await fetch(`https://server100-847a.onrender.com/status/${checkoutId}`);
-                            const statusData = await statusCheck.json();
-                            
-                            if (statusData.status === "completed") {
-                                clearInterval(pollInterval);
-                                statusText.innerText = "PAYMENT RECEIVED! CONFIRMING...";
-                                statusText.style.color = "var(--safaricom-green)";
-                                setTimeout(() => { window.location.href = "payment2.html"; }, 2000);
-                            } else if (statusData.status === "failed") {
-                                clearInterval(pollInterval);
-                                statusText.innerText = "TRANSACTION CANCELED OR FAILED";
-                                statusText.style.color = "var(--error-red)";
-                                setTimeout(() => { modal.style.display = "none"; }, 3000);
-                            }
-                        } catch (err) {
-                            console.error("Polling execution tracking error:", err);
-                        }
-                    }, 3000);
+                    // SAVE IT TO LOCAL STORAGE FOR THE PROCESSING PAGE
+                    localStorage.setItem("request_id", checkoutId);
+                    
+                    statusText.innerText = "PROMPT SENT! REDIRECTING...";
+                    statusText.style.color = "var(--safaricom-green)";
+                    subStatusText.innerText = "Preparing secure tracking window...";
 
-                    // Clear polling loop systematically after 60 seconds
-                    setTimeout(() => { clearInterval(pollInterval); }, 60000);
+                    // Immediately push execution over to your polling loading page
+                    setTimeout(() => { 
+                        window.location.href = "processing.html"; 
+                    }, 1500);
                 }
 
             } else {
-                throw new Error(data.message || "Insufficient balance or invalid gateway request.");
+                // Catches explicit API failures (e.g., Image Item #3: Insufficient balance)
+                throw new Error(data.message || "Invalid response structure from backend gateway.");
             }
         } catch (error) {
+            // Update modal text UI dynamically to reflect the error
             statusText.innerText = "ERROR: " + error.message;
             statusText.style.color = "var(--error-red)";
-            setTimeout(() => { modal.style.display = "none"; }, 4000);
+            subStatusText.style.display = "none";
+            
+            // Wait 3 seconds, close the modal view overlay, staying on payment1.html safely
+            setTimeout(() => { 
+                modal.style.display = "none"; 
+            }, 3000);
         }
     });
 </script>
 
 </body>
-</html>
+    </html>
