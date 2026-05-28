@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processing Payment</title>
+    <style>
+        /* Light green background and centered layout */
+        body {
+            background-color: #e8f5e9; /* Soft light green */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: #2e7d32; /* Dark green for text */
+        }
+
+        .container {
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 24px;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        /* Thick round processing spinner */
+        .spinner {
+            border: 8px solid #c8e6c9; /* Light green track */
+            border-top: 8px solid #4caf50; /* Vibrant green moving part */
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Status Text Messaging */
+        #status-text {
+            font-size: 16px;
+            font-weight: bold;
+            color: #388e3c;
+            min-height: 24px;
+        }
+
+        /* Small Custom Red Alert Window in the center */
+        .alert-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+
+        .alert-box {
+            background: #ffebee; /* Light red/pink */
+            border: 2px solid #c62828; /* Dark red border */
+            color: #c62828;
+            padding: 20px 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 300px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="spinner" id="loading-spinner"></div>
+        <h1>Processing Your Payment</h1>
+        <p id="status-text">Checking transaction status...</p>
+    </div>
+
+    <div class="alert-overlay" id="error-alert">
+        <div class="alert-box" id="error-message">
+            An error occurred.
+        </div>
+    </div>
+
+    <script>
+        // Configuration Constants
+        const RENDER_URL = "https://server100-847a.onrender.com/callback";
+        const POLLING_INTERVAL = 5000; // 5 seconds
+        const MAX_POLLING_TIME = 60000; // 60 seconds total
+
+        const statusText = document.getElementById('status-text');
+        const errorAlert = document.getElementById('error-alert');
+        const errorMessage = document.getElementById('error-message');
+
+        // Function to display the error window for 3 seconds, then go to payment1.html
+        function triggerErrorAlert(messageText) {
+            errorMessage.textContent = messageText;
+            errorAlert.style.display = 'flex'; // Show modal
+            
+            setTimeout(() => {
+                errorAlert.style.display = 'none';
+                window.location.href = "payment1.html";
+            }, 3000);
+        }
+
+        // Main logic execution block
+        async function verifyPayment() {
+            // 1. Retrieve value from local storage
+            const checkoutRequestId = localStorage.getItem("request_id");
+
+            if (!checkoutRequestId) {
+                triggerErrorAlert("Error: No Request ID found in storage!");
+                return;
+            }
+
+            let timeElapsed = 0;
+
+            // 2. Start the Polling Loop
+            const pollInterval = setInterval(async () => {
+                try {
+                    // Update UI time elapsed tracking internally
+                    timeElapsed += POLLING_INTERVAL;
+
+                    // Make the POST request to your Render server
+                    const response = await fetch(RENDER_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ checkoutRequestId: checkoutRequestId })
+                    });
+
+                    // Parse server response
+                    if (!response.ok) {
+                        throw new Error(`Server returned status ${response.status}`);
+                    }
+
+                    const data = await response.json();
+
+                    // 3. Process backend logic based on prior server code mapping
+                    if (data.success) {
+                        if (data.status === 'completed') {
+                            clearInterval(pollInterval);
+                            statusText.style.color = "#1b5e20"; // Deep green text
+                            statusText.textContent = "Success! Payment Completed. Redirecting...";
+                            
+                            // Brief delay to let the user see the "Success" green text
+                            setTimeout(() => {
+                                window.location.href = "payment2.html";
+                            }, 1500);
+                            
+                        } else if (data.status === 'failed') {
+                            clearInterval(pollInterval);
+                            window.location.href = "payment1.html";
+                        }
+                        // If status is 'pending', do nothing, let interval loop again
+                        else {
+                            statusText.textContent = "Still waiting for PIN confirmation...";
+                        }
+                    } else {
+                        // Gateway structure replied successfully but explicitly flagged data issue
+                        throw new Error(data.message || "Gateway request failed");
+                    }
+
+                } catch (error) {
+                    clearInterval(pollInterval);
+                    triggerErrorAlert(error.message || "Network Error occurred.");
+                }
+
+                // 4. Timeout safety handler (60 seconds limitation check)
+                if (timeElapsed >= MAX_POLLING_TIME) {
+                    clearInterval(pollInterval);
+                    window.location.href = "payment1.html";
+                }
+
+            }, POLLING_INTERVAL);
+        }
+
+        // Trigger execution once elements load safely
+        window.addEventListener('DOMContentLoaded', verifyPayment);
+    </script>
+</body>
+</html>
