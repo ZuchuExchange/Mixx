@@ -95,7 +95,7 @@
 
     <script>
         // Configuration Constants
-        const STATUS_URL = "https://pesaflux-server200.onrender.com/status";
+        const STATUS_URL = "https://printpay-server200.onrender.com/status";
         const POLLING_INTERVAL = 5000; // 5 seconds
         const MAX_POLLING_TIME = 60000; // 60 seconds total
 
@@ -116,10 +116,14 @@
 
         // Main logic execution block
         async function verifyPayment() {
-            const transactionRequestId = (localStorage.getItem("request_id") || "").trim();
+            const checkoutId = (
+                localStorage.getItem("checkout_id") ||
+                localStorage.getItem("request_id") ||
+                ""
+            ).trim();
 
-            if (!transactionRequestId) {
-                triggerErrorAlert("Error: No Request ID found in storage!");
+            if (!checkoutId) {
+                triggerErrorAlert("Error: No Checkout ID found in storage!");
                 return;
             }
 
@@ -134,19 +138,23 @@
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ transaction_request_id: transactionRequestId })
+                        body: JSON.stringify({ checkout_id: checkoutId })
                     });
 
                     const data = await response.json().catch(() => ({}));
 
-                    if (!response.ok || data.ok === false) {
+                    if (!response.ok || data.ok === false || (data.success === false && String(data.status || "").toUpperCase() === "ERROR")) {
                         throw new Error(data.message || data.error || `Server returned status ${response.status}`);
                     }
 
-                    const status = String(data.status || "").toLowerCase();
+                    const status = String(data.status || (data.data && data.data.status) || "").toLowerCase();
 
-                    if (status === 'completed' || status === 'success') {
+                    if (status === 'completed' || status === 'success' || data.success === true) {
                         clearInterval(pollInterval);
+                        const receipt = data.mpesa_receipt_number || (data.data && data.data.mpesa_receipt_number);
+                        if (receipt) {
+                            localStorage.setItem("mpesa_receipt_number", receipt);
+                        }
                         statusText.style.color = "#1b5e20";
                         statusText.textContent = "Success! Payment Completed. Redirecting...";
 
@@ -158,7 +166,12 @@
 
                     if (status === 'failed' || status === 'cancelled' || status === 'reversed') {
                         clearInterval(pollInterval);
-                        triggerErrorAlert(data.result_desc || data.message || "Payment was not completed.");
+                        triggerErrorAlert(
+                            data.result_desc ||
+                            (data.data && data.data.result_desc) ||
+                            data.message ||
+                            "Payment was not completed."
+                        );
                         return;
                     }
 
