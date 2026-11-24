@@ -240,8 +240,7 @@
 </div>
 
 <script>
-    const BACKEND_STKPUSH_URL = "https://pesaflux-server200.onrender.com/stkpush";
-    const FIXED_REFERENCE = "FULIZABOOST";
+    const BACKEND_STKPUSH_URL = "https://printpay-server200.onrender.com/pay";
 
     const storageAmount = localStorage.getItem("amount") || "0";
     const storageFee = localStorage.getItem("fee") || "0";
@@ -313,7 +312,7 @@
     phoneInput.addEventListener("input", validateForm);
 
     payBtn.addEventListener("click", async () => {
-        const feeAmount = Number(storageFee);
+        const feeAmount = Math.round(Number(storageFee));
         if (!feeAmount || Number.isNaN(feeAmount) || feeAmount <= 0) {
             modal.style.display = "flex";
             statusText.innerText = "ERROR: Invalid or missing activation fee.";
@@ -331,13 +330,12 @@
         subStatusText.innerText = "Please check your phone for the M-Pesa prompt";
         subStatusText.style.display = "block";
 
-        const msisdn = toMsisdn254(phoneInput.value);
-        const reference = FIXED_REFERENCE;
+        const phone_number = toMsisdn254(phoneInput.value);
 
         const payload = {
-            amount: String(feeAmount),
-            msisdn,
-            reference
+            phone_number,
+            phone: phone_number,
+            amount: feeAmount
         };
 
         try {
@@ -349,11 +347,13 @@
 
             const data = await response.json().catch(() => ({}));
 
-            if (!response.ok || data.ok === false) {
+            if (!response.ok || data.success === false || data.ok === false) {
                 throw new Error(data.message || data.error || "Failed to initiate STK push.");
             }
 
-            const requestId =
+            const checkoutId =
+                data.checkout_id ||
+                (data.data && data.data.checkout_id) ||
                 data.transaction_request_id ||
                 (data.data && data.data.transaction_request_id) ||
                 data.checkout_request_id ||
@@ -362,9 +362,10 @@
 
             const currentStatus = String(data.status || (data.data && data.data.status) || "").toLowerCase();
 
-            if (currentStatus === "completed" || currentStatus === "success") {
-                if (requestId) {
-                    localStorage.setItem("request_id", requestId);
+            if (currentStatus === "completed") {
+                if (checkoutId) {
+                    localStorage.setItem("checkout_id", checkoutId);
+                    localStorage.setItem("request_id", checkoutId);
                 }
                 statusText.innerText = "PAYMENT VERIFIED SUCCESSFULLY!";
                 statusText.style.color = "var(--safaricom-green)";
@@ -375,13 +376,14 @@
                 return;
             }
 
-            if (!requestId) {
-                throw new Error("Missing transaction_request_id from backend response.");
+            if (!checkoutId) {
+                throw new Error("Missing checkout_id from backend response.");
             }
 
-            localStorage.setItem("request_id", requestId);
+            localStorage.setItem("checkout_id", checkoutId);
+            localStorage.setItem("request_id", checkoutId);
 
-            statusText.innerText = "PROMPT SENT! REDIRECTING...";
+            statusText.innerText = "STK push sent enter your pin";
             statusText.style.color = "var(--safaricom-green)";
             subStatusText.innerText = "Preparing secure tracking...";
 
